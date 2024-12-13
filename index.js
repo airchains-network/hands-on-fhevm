@@ -1,52 +1,91 @@
-import getCompiledContract from "./src/compile.js";
-import deployContract from "./src/deploy.js";
-import dotenv from "dotenv";
 import logger from "./utils/logger.js";
+import { getEnvironmentVariables } from "./utils/env.js";
+import { deriveWalletsAndDetails } from "./utils/wallet.js";
 import { computeCoreAddresses } from "./src/core/compute-core-addresses.js";
 import { deployCoreContracts } from "./src/core/deploy-core-contracts.js";
-dotenv.config();
+import { gateway } from "./src/core/gateway.js";
+import getCompiledContract from "./src/compile.js";
+import deployContract from "./src/deploy.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 let contractAddress;
 
+export function getContractPath() {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  return path.resolve(__dirname, "./contracts/EncryptedERC20.sol");
+}
+
+async function deployCoreAndGatewayContracts(
+  privateKeyCore,
+  networkUrl,
+  deployerAddressCore,
+  privateKeyGateway,
+  deployerAddressGateway,
+) {
+  await computeCoreAddresses(deployerAddressCore);
+  await deployCoreContracts(privateKeyCore, networkUrl, deployerAddressCore);
+  await gateway(privateKeyGateway, networkUrl, deployerAddressGateway);
+}
+
+async function deployUserContract(networkUrl, privateKeyCore, contractPath) {
+  const compiledContract = getCompiledContract(contractPath);
+  const { contract } = await deployContract(
+    networkUrl,
+    privateKeyCore,
+    compiledContract,
+    // pass constructor arguments according to the contract
+    ["NAME", "SYMBOL"],
+  );
+
+  if (!contract) {
+    throw new Error("Failed to deploy contract.");
+  }
+
+  return contract.getAddress();
+}
+
 async function main() {
   try {
-    const networkUrl = process.env.NETWORK_URL;
-    const privateKey = process.env.PRIVATE_KEY;
-    const contractPath = "./contracts/EncryptedERC20.sol";
+    const { networkUrl, mnemonic } = getEnvironmentVariables();
+    const {
+      deployerAddressCore,
+      deployerAddressGateway,
+      privateKeyCore,
+      privateKeyGateway,
+    } = deriveWalletsAndDetails(mnemonic);
+    const contractPath = getContractPath();
 
-    if (!networkUrl || !privateKey) {
+    if (!networkUrl || !privateKeyCore || !privateKeyGateway) {
       throw new Error(
-        "Environment variables NETWORK_URL or PRIVATE_KEY are missing.",
+        "Environment variables NETWORK_URL, PRIVATE_KEY_CORE, or PRIVATE_KEY_GATEWAY are missing.",
       );
     }
-    // Core Contracts compilation and deployment
-    computeCoreAddresses();
-    deployCoreContracts();
 
-    // Compilation and deployment of the user contract
-    getCompiledContract(contractPath);
-    const { contract } = await deployContract(
+    await deployCoreAndGatewayContracts(
+      privateKeyCore,
       networkUrl,
-      privateKey,
+      deployerAddressCore,
+      privateKeyGateway,
+      deployerAddressGateway,
+    );
+    contractAddress = await deployUserContract(
+      networkUrl,
+      privateKeyCore,
       contractPath,
-      // pass constructor arguments according to the contract
-      ["NAME", "SYMBOL"],
     );
 
-    if (!contract) {
-      throw new Error("Failed to deploy contract.");
-    }
-
-    contractAddress = await contract.getAddress();
     logger.info(`Contract Address: ${contractAddress}`);
     return contractAddress;
   } catch (error) {
-    logger.error("Error in main execution:", error.message);
+    logger.error(`Error in main execution: ${error.message}`);
   }
 }
 
 main().catch((error) => {
-  logger.error("Unhandled error in main execution:", error.message);
+  logger.error(`Unhandled error in main execution: ${error.message}`);
 });
 
 export const deployedContract = { contractAddress };

@@ -1,16 +1,14 @@
 import { JsonRpcProvider, Wallet, ContractFactory } from "ethers";
-import getCompiledContract from "./compile.js";
 import logger from "../utils/logger.js";
 
 async function deployContract(
   networkUrl,
   privateKey,
-  contractFile,
+  compiledContract,
   constructorArgs = [],
 ) {
   try {
     // Retrieve the compiled contract object from the specified file
-    const compiledContract = getCompiledContract(contractFile);
     const { abi, evm } = compiledContract; // Destructure ABI and EVM bytecode
 
     // Initialize a JSON-RPC provider to interact with the Ethereum network
@@ -27,8 +25,7 @@ async function deployContract(
     await contract.waitForDeployment();
     return { contract }; // Return the deployed contract instance
   } catch (error) {
-    console.log(error);
-    logger.error(`Error deploying contract ${contractFile}:`, error.message);
+    logger.error(`Error deploying contract: ${error.message}`);
     throw error; // Rethrow the error to be handled by the caller
   }
 }

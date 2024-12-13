@@ -1,46 +1,46 @@
 import path from "path";
 import fs from "fs";
 import { JsonRpcProvider, Wallet, Contract } from "ethers";
-import { createInstance } from "../utils/createInstance.js";
+import { createInstance } from "../../utils/createInstance.js";
 
-function getABI(fileName) {
+function loadABI(fileName) {
   try {
     const abiFilePath = path.resolve(process.cwd(), `build/${fileName}.json`);
-    const abi = fs.readFileSync(abiFilePath, "utf8");
-    return JSON.parse(abi);
+    const abiContent = fs.readFileSync(abiFilePath, "utf8");
+    return JSON.parse(abiContent);
   } catch (error) {
     console.error("Error reading ABI file:", error.message);
     process.exit(1);
   }
 }
 
-export const intractionMint = async (
-  filename,
-  networkUrl,
-  privateKey1,
-  contractAddress,
-) => {
-  try {
-    const abi = getABI(filename);
-    const provider = new JsonRpcProvider(networkUrl);
-    const wallet = new Wallet(privateKey1, provider);
-    const contract = new Contract(contractAddress, abi, wallet);
-
-    const tx = await contract.mint(1000);
-    return await tx.hash;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const decryptMint = async (
+export const mintTokens = async (
   filename,
   networkUrl,
   privateKey,
   contractAddress,
 ) => {
   try {
-    const abi = getABI(filename);
+    const abi = loadABI(filename);
+    const provider = new JsonRpcProvider(networkUrl);
+    const wallet = new Wallet(privateKey, provider);
+    const contract = new Contract(contractAddress, abi, wallet);
+
+    const transaction = await contract.mint(1000);
+    return await transaction.hash;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const decryptMintedTokens = async (
+  filename,
+  networkUrl,
+  privateKey,
+  contractAddress,
+) => {
+  try {
+    const abi = loadABI(filename);
     const provider = new JsonRpcProvider(networkUrl);
     const wallet = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, abi, wallet);
@@ -48,97 +48,89 @@ export const decryptMint = async (
     const encryptedBalance = await contract.balanceOf(wallet.address);
     console.log(encryptedBalance);
 
-    // const bal = await contract.balances(wallet.address)
-    // console.log(bal)
+    const requestTx = await contract.requestDecryptedBalanceOf(wallet.address);
+    await requestTx.wait();
 
-    const tx1 = await contract.requestDecryptedBalanceOf(
-      "0xB223904f93Cf357eB294549A8690576714C6408d",
-    );
-    // // console.log(tx1)
-    await tx1.wait();
-
-    const tx2 = await contract.decryptedBalanceOf(
-      "0xB223904f93Cf357eB294549A8690576714C6408d",
-    );
-    console.log(tx2);
+    const decryptedBalance = await contract.decryptedBalanceOf(wallet.address);
+    console.log(decryptedBalance);
   } catch (error) {
     console.log(error);
   }
 };
 
-export const TokenDetails = async (
+export const fetchTokenDetails = async (
   filename,
   networkUrl,
   privateKey,
   contractAddress,
 ) => {
   try {
-    const abi = getABI(filename);
+    const abi = loadABI(filename);
     const provider = new JsonRpcProvider(networkUrl);
     const wallet = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, abi, wallet);
 
-    const tx1 = await contract.name();
-    console.log(tx1);
+    const tokenName = await contract.name();
+    console.log(tokenName);
 
-    const tx2 = await contract.symbol();
-    console.log(tx2);
+    const tokenSymbol = await contract.symbol();
+    console.log(tokenSymbol);
 
-    const tx3 = await contract.totalSupply();
-    console.log(tx3);
+    const totalSupply = await contract.totalSupply();
+    console.log(totalSupply);
 
-    const tx4 = await contract.getOwner();
-    console.log(tx4);
+    const ownerAddress = await contract.getOwner();
+    console.log(ownerAddress);
   } catch (error) {
     console.log(error);
   }
 };
 
-export const intractionTransfer = async (
+export const transferTokens = async (
   filename,
   networkUrl,
   privateKey,
   contractAddress,
 ) => {
   try {
-    const abi = getABI(filename);
+    const abi = loadABI(filename);
     const provider = new JsonRpcProvider(networkUrl);
     const wallet = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, abi, wallet);
 
     const fhevmInstance = await createInstance();
 
-    const input = fhevmInstance.createEncryptedInput(
+    const encryptedInput = fhevmInstance.createEncryptedInput(
       contractAddress,
       wallet.address,
     );
-    input.add64(1337);
-    const inputs = input.encrypt();
+    encryptedInput.add64(1337);
+    const encryptedInputs = encryptedInput.encrypt();
 
-    const tx = await contract["transfer(address,bytes32,bytes)"](
-      "0x85f0556CB63CfCE1796Ff0B2781202dcC33377Af",
-      inputs.handles[0],
-      inputs.inputProof,
+    const transaction = await contract["transfer(address,bytes32,bytes)"](
+      wallet.address,
+      encryptedInputs.handles[0],
+      encryptedInputs.inputProof,
     );
 
-    const asdf = await tx.wait();
+    const receipt = await transaction.wait();
 
-    console.log(asdf);
+    console.log(receipt);
 
-    return await tx.hash;
+    return await transaction.hash;
   } catch (error) {
     console.log(error);
   }
 };
 
-export const reencryptBalance = async (
+export const reencryptUserBalance = async (
   filename,
   networkUrl,
   privateKey1,
   contractAddress,
 ) => {
   try {
-    const abi = getABI(filename);
+    const abi = loadABI(filename);
     const provider = new JsonRpcProvider(networkUrl);
     const wallet = new Wallet(privateKey1, provider);
     console.log(wallet);
@@ -153,11 +145,11 @@ export const reencryptBalance = async (
       { Reencrypt: eip712.types.Reencrypt },
       eip712.message,
     );
-    const bal = await contract.balanceOf(wallet.address);
-    console.log(bal);
+    const balance = await contract.balanceOf(wallet.address);
+    console.log(balance);
 
     const userBalance = await instance.reencrypt(
-      bal, // the encrypted balance
+      balance, // the encrypted balance
       privateKey, // the private key generated by the dApp
       publicKey, // the public key generated by the dApp
       signature.replace("0x", ""), // the user's signature of the public key
@@ -171,34 +163,34 @@ export const reencryptBalance = async (
   }
 };
 
-export const intractionAprrove = async (
+export const approveTransaction = async (
   filename,
   networkUrl,
   privateKey,
   contractAddress,
 ) => {
   try {
-    const abi = getABI(filename);
+    const abi = loadABI(filename);
     const provider = new JsonRpcProvider(networkUrl);
     const wallet = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, abi, wallet);
 
     const fhevmInstance = await createInstance();
 
-    const input = fhevmInstance.createEncryptedInput(
+    const encryptedInput = fhevmInstance.createEncryptedInput(
       contractAddress,
       wallet.address,
     );
-    input.add64(1337);
-    const inputs = input.encrypt();
+    encryptedInput.add64(1337);
+    const encryptedInputs = encryptedInput.encrypt();
 
-    const tx = await contract["approve(address,bytes32,bytes)"](
+    const transaction = await contract["approve(address,bytes32,bytes)"](
       wallet.address,
-      inputs.handles[0],
-      inputs.inputProof,
+      encryptedInputs.handles[0],
+      encryptedInputs.inputProof,
     );
 
-    return await tx.hash;
+    return await transaction.hash;
   } catch (error) {
     console.log(error);
   }

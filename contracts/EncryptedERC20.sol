@@ -20,10 +20,7 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
     uint8 public constant decimals = 6;
 
     mapping(address => uint64) public decrypted_balance_map;
-    // A mapping from address to an encrypted balance.
-    mapping(address => euint64) internal balances;
-
-    // A mapping of the form mapping(owner => mapping(spender => allowance)).
+    mapping(address => euint64) internal  balances;
     mapping(address => mapping(address => euint64)) internal allowances;
 
     constructor(string memory name_, string memory symbol_) Ownable(msg.sender) {
@@ -31,32 +28,34 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
         _symbol = symbol_;
     }
 
-    // function addressAllower(address new_address) external {
-    //     TFHE.allow(balances[msg.sender], new_address);
-    // }
-
-    // Returns the name of the token.
     function name() public view virtual returns (string memory) {
         return _name;
     }
 
-    // Returns the symbol of the token, usually a shorter version of the name.
     function symbol() public view virtual returns (string memory) {
         return _symbol;
     }
 
-    // Returns the total supply of the token
     function totalSupply() public view virtual returns (uint64) {
         return _totalSupply;
     }
 
-    // Sets the balance of the owner to the given encrypted balance.
+    function getOwner() public view virtual returns (address) {
+        return owner();
+    }
+
+    function balanceOf(address wallet) public view virtual returns (euint64) {
+        return balances[wallet];
+    }
+
+    function decryptedBalanceOf(address wallet) public view virtual returns (uint64){
+        return decrypted_balance_map[wallet];
+    }
+
     function mint(uint64 mintedAmount) public virtual onlyOwner {
-        balances[owner()] = TFHE.add(balances[owner()], mintedAmount); // overflow impossible because of next line
+        balances[owner()] = TFHE.add(balances[owner()], mintedAmount);
         TFHE.allow(balances[owner()], address(this));
-        TFHE.allow(balances[owner()], address(0x305F1F471e9baCFF2b3549F9601f9A4BEafc94e1));
-        TFHE.allow(balances[owner()], address(0xB223904f93Cf357eB294549A8690576714C6408d));
-        // TFHE.allow(balances[owner()], owner());
+        TFHE.allow(balances[owner()], owner());
         _totalSupply = _totalSupply + mintedAmount;
         emit Mint(owner(), mintedAmount);
     }
@@ -67,7 +66,6 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
         return true;
     }
 
-    // Transfers an amount from the message sender address to the `to` address.
     function transfer(address to, euint64 amount) public virtual returns (bool) {
         require(TFHE.isSenderAllowed(amount));
         // makes sure the owner has enough tokens
@@ -76,20 +74,10 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
         return true;
     }
 
-    // Returns the balance handle of the caller.
-    function balanceOf(address wallet) public view virtual returns (euint64) {
-        return balances[wallet];
-    }
 
-    function decryptedBalanceOf(address wallet) public view virtual returns (uint64){
-        return decrypted_balance_map[wallet];
-    }
 
     function requestDecryptedBalanceOf(address wallet) public virtual {
-        // euint64
         encrypted_balance = balances[wallet];
-        // uint256[] memory cts = new uint256[](1);
-        // cts[0] = Gateway.toUint256(encrypted_balance);
         uint256[] memory cts = new uint256[](1);
         cts[0] = Gateway.toUint256(encrypted_balance);
         uint256 requestID = Gateway.requestDecryption(cts, this.callbackDecryptedBalanceOf.selector, 0, block.timestamp + 100, false);
@@ -101,9 +89,9 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
     address[] memory params = getParamsAddress(requestID);
     unchecked {
         address wallet_address = params[0];
-        uint64 decryptedBalance = decryptedInput;
-        decrypted_balance_map[wallet_address] = decryptedBalance;
-        return decryptedBalance;
+        // uint64 decryptedBalance = decryptedInput;
+        decrypted_balance_map[wallet_address] = decryptedInput;
+        return decryptedInput;
     }
 }
     function callbackUint64(uint256, uint64 decryptedInput) public onlyGateway returns (uint64) {
@@ -152,12 +140,6 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
         return true;
     }
 
-    function _approve(address owner, address spender, euint64 amount) internal virtual {
-        allowances[owner][spender] = amount;
-        TFHE.allow(amount, address(this));
-        TFHE.allow(amount, owner);
-        TFHE.allow(amount, spender);
-    }
 
     function _allowance(address owner, address spender) internal view virtual returns (euint64) {
         return allowances[owner][spender];
@@ -172,6 +154,13 @@ contract EncryptedERC20 is Ownable2Step,GatewayCaller  {
         ebool isTransferable = TFHE.and(canTransfer, allowedTransfer);
         _approve(owner, spender, TFHE.select(isTransferable, TFHE.sub(currentAllowance, amount), currentAllowance));
         return isTransferable;
+    }
+
+    function _approve(address owner, address spender, euint64 amount) internal virtual {
+        allowances[owner][spender] = amount;
+        TFHE.allow(amount, address(this));
+        TFHE.allow(amount, owner);
+        TFHE.allow(amount, spender);
     }
 
     // Transfers an encrypted amount.

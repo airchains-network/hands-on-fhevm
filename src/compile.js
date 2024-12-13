@@ -2,10 +2,12 @@ import solc from "solc";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import logger from "../utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const OUTPUT_DIR = path.resolve(__dirname, "../build");
+const CONTRACTS_DIR = path.resolve(__dirname, "../contracts");
 
 // Ensure the output directory exists, create it if it doesn't
 function ensureOutputDirExists() {
@@ -16,6 +18,10 @@ function ensureOutputDirExists() {
 
 // Read the source code of the contract from the file
 function readContractSource(contractPath) {
+  if (typeof contractPath !== "string") {
+    throw new Error(`Invalid contract path: ${contractPath}`);
+  }
+
   if (!fs.existsSync(contractPath)) {
     throw new Error(`Contract file not found at path: ${contractPath}`);
   }
@@ -42,25 +48,50 @@ function createCompilerInput(contractPath, source) {
   };
 }
 
-// Custom import handler for the Solidity compiler to resolve imports
+// Enhanced custom import handler for the Solidity compiler to resolve imports
 function findImports(importPath) {
   try {
     let fullPath;
-    if (importPath.startsWith("@")) {
-      // Handle imports from node_modules
-      fullPath = path.resolve(__dirname, "../node_modules", importPath);
-    } else if (importPath.startsWith("fhevm")) {
-      // Handle imports from node_modules/fhevm
-      fullPath = path.resolve(__dirname, "../node_modules", importPath);
-    } else {
-      fullPath = path.resolve(path.dirname(importPath), importPath);
+
+    // Try to resolve imports within node_modules/fhevm directories
+    const fhevmBasePath = path.resolve(__dirname, "../node_modules/fhevm");
+    const potentialPaths = [
+      path.resolve(fhevmBasePath, importPath.replace("fhevm/", "")),
+      path.resolve(fhevmBasePath, "lib", importPath),
+      path.resolve(fhevmBasePath, "gateway", importPath),
+      path.resolve(fhevmBasePath, importPath),
+    ];
+
+    // Try to resolve imports within the contracts directory
+    const contractsPath = path.resolve(CONTRACTS_DIR, importPath);
+    if (fs.existsSync(contractsPath)) {
+      return { contents: fs.readFileSync(contractsPath, "utf8") };
     }
+
+    for (const p of potentialPaths) {
+      if (fs.existsSync(p)) {
+        return { contents: fs.readFileSync(p, "utf8") };
+      }
+    }
+
+    // Handle imports from node_modules or other relative paths
+    if (importPath.startsWith("@") || importPath.startsWith("node_modules")) {
+      fullPath = path.resolve(__dirname, "../node_modules", importPath);
+    } else if (importPath.startsWith("./") || importPath.startsWith("../")) {
+      fullPath = path.resolve(path.dirname(importPath), importPath);
+    } else {
+      fullPath = path.resolve(__dirname, importPath);
+    }
+
     if (fs.existsSync(fullPath)) {
       return { contents: fs.readFileSync(fullPath, "utf8") };
     }
-    throw new Error(`Import file ${importPath} not found.`);
+
+    logger.error(
+      `Import file not found: ${importPath} at resolved paths: ${potentialPaths.join(", ")}, contractsPath: ${contractsPath}`,
+    );
+    throw new Error(`Import file not found: ${importPath}`);
   } catch (error) {
-    console.error(`Error resolving import: ${error.message}`);
     return { error: error.message };
   }
 }
@@ -78,7 +109,7 @@ function handleCompilationErrors(errors) {
     if (error.severity === "error") {
       throw new Error(message);
     } else {
-      console.warn(message);
+      logger.warn(message);
     }
   });
 }
@@ -94,12 +125,20 @@ function writeABIToFile(contractName, abi) {
   ensureOutputDirExists();
   const abiPath = path.join(OUTPUT_DIR, `${contractName}.json`);
   fs.writeFileSync(abiPath, JSON.stringify(abi, null, 2));
-  console.log(`ABI written to ${abiPath}`);
+  logger.info(`ABI written to ${abiPath}`);
 }
 
 // Main function to compile a contract and return its compiled data
 function getCompiledContract(contractPath) {
   try {
+    if (typeof contractPath !== "string") {
+      throw new Error(
+        `Invalid contract path type: ${typeof contractPath}, value: ${JSON.stringify(contractPath)}`,
+      );
+    }
+
+    logger.info(`Compiling contract at path: ${contractPath}`);
+
     const source = readContractSource(contractPath);
     const input = createCompilerInput(contractPath, source);
     const output = compileContract(input);
@@ -115,7 +154,7 @@ function getCompiledContract(contractPath) {
 
     return compiledContract;
   } catch (error) {
-    console.error(
+    logger.error(
       `Error compiling contract at ${contractPath}: ${error.message}`,
     );
     throw error;

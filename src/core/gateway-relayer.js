@@ -11,6 +11,7 @@ import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import logger from "../../utils/logger.js";
+import { loadABI } from "../test/encrypted-erc20.js";
 
 dotenv.config();
 
@@ -98,9 +99,8 @@ async function deployGateway(privateKey, networkUrl, deployerAddress) {
   }
 }
 
-// TODO: CHECK IF THIS IS WORKING
 async function addRelayer(
-  privateKey,
+  ownerPrivateKey,
   gatewayAddress,
   networkUrl,
   relayerAddress,
@@ -112,16 +112,10 @@ async function addRelayer(
     if (codeAtAddress === "0x") {
       throw new Error(`${gatewayAddress} is not a smart contract`);
     }
+    const abi = loadABI("GatewayContract.sol");
+    const owner = new Wallet(ownerPrivateKey, provider);
+    const gateway = new Contract(gatewayAddress, abi, owner);
 
-    // Set up wallet and contract instance
-    const owner = new Wallet(privateKey, provider);
-    const gateway = new Contract(
-      gatewayAddress,
-      ["function addRelayer(address relayer) public"],
-      owner,
-    );
-
-    // Call addRelayer method
     const tx = await gateway.addRelayer(relayerAddress);
     const receipt = await tx.wait();
 
@@ -137,7 +131,12 @@ async function addRelayer(
   }
 }
 
-export async function gateway(privateKey, networkUrl, deployerAddress) {
+export async function gatewayAndRelayer(
+  privateKey,
+  networkUrl,
+  deployerAddress,
+  privateKeyRelayer,
+) {
   try {
     await computePredeployAddress(deployerAddress);
     await deployGateway(privateKey, networkUrl, deployerAddress);
@@ -152,12 +151,16 @@ export async function gateway(privateKey, networkUrl, deployerAddress) {
       ),
     );
 
-    // Add relayer
+    // Derive the relayer address from the provided private key
+    const relayerWallet = new Wallet(privateKeyRelayer);
+    const relayerAddress = relayerWallet.address;
+
+    // Add relayer using the owner's private key (the one used to deploy the contract)
     await addRelayer(
-      privateKey,
+      privateKey, // Owner's key
       envConfig.GATEWAY_CONTRACT_PREDEPLOY_ADDRESS,
       networkUrl,
-      deployerAddress,
+      relayerAddress,
     );
   } catch (error) {
     logger.error("Error in gateway function:", error);

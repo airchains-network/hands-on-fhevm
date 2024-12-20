@@ -3,14 +3,14 @@ import { getEnvironmentVariables } from "./utils/env.js";
 import { deriveWalletsAndDetails } from "./utils/wallet.js";
 import { computeCoreAddresses } from "./src/core/compute-core-addresses.js";
 import { deployCoreContracts } from "./src/core/deploy-core-contracts.js";
-import { gateway } from "./src/core/gateway.js";
+import { gatewayAndRelayer } from "./src/core/gateway-relayer.js";
 import getCompiledContract from "./src/compile.js";
 import deployContract from "./src/deploy.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-
-let contractAddress;
+import fs from "fs";
+export let contractAddress;
 
 export function getContractPath() {
   const __filename = fileURLToPath(import.meta.url);
@@ -24,10 +24,16 @@ async function deployCoreAndGatewayContracts(
   deployerAddressCore,
   privateKeyGateway,
   deployerAddressGateway,
+  privateKeyRelayer,
 ) {
   await computeCoreAddresses(deployerAddressCore);
   await deployCoreContracts(privateKeyCore, networkUrl, deployerAddressCore);
-  await gateway(privateKeyGateway, networkUrl, deployerAddressGateway);
+  await gatewayAndRelayer(
+    privateKeyGateway,
+    networkUrl,
+    deployerAddressGateway,
+    privateKeyRelayer,
+  );
 }
 
 async function deployUserContract(networkUrl, privateKeyCore, contractPath) {
@@ -55,6 +61,7 @@ async function main() {
       deployerAddressGateway,
       privateKeyCore,
       privateKeyGateway,
+      privateKeyRelayer,
     } = deriveWalletsAndDetails(mnemonic);
     const contractPath = getContractPath();
 
@@ -70,6 +77,7 @@ async function main() {
       deployerAddressCore,
       privateKeyGateway,
       deployerAddressGateway,
+      privateKeyRelayer,
     );
     contractAddress = await deployUserContract(
       networkUrl,
@@ -78,6 +86,7 @@ async function main() {
     );
 
     logger.info(`Contract Address: ${contractAddress}`);
+    fs.writeFileSync("data/contractAddress.txt", contractAddress);
     return contractAddress;
   } catch (error) {
     logger.error(`Error in main execution: ${error.message}`);
@@ -87,5 +96,3 @@ async function main() {
 main().catch((error) => {
   logger.error(`Unhandled error in main execution: ${error.message}`);
 });
-
-export const deployedContract = { contractAddress };

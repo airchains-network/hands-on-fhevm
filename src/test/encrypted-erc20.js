@@ -1,9 +1,10 @@
 import path from "path";
 import fs from "fs";
 import { JsonRpcProvider, Wallet, Contract } from "ethers";
+import * as ethers from "ethers";
 import { createInstance } from "../../utils/createInstance.js";
 
-function loadABI(fileName) {
+export function loadABI(fileName) {
   try {
     const abiFilePath = path.resolve(process.cwd(), `build/${fileName}.json`);
     const abiContent = fs.readFileSync(abiFilePath, "utf8");
@@ -21,8 +22,9 @@ export const mintTokens = async (
   contractAddress,
 ) => {
   try {
-    const abi = loadABI(filename);
-    const provider = new JsonRpcProvider(networkUrl);
+    const abi = await loadABI(filename);
+    // const provider = await new JsonRpcProvider(networkUrl);
+    const provider = new ethers.JsonRpcProvider(networkUrl);
     const wallet = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, abi, wallet);
 

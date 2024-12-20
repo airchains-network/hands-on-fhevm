@@ -102,15 +102,14 @@ function compileContract(input) {
   return JSON.parse(output);
 }
 
-// Handle and log compilation errors, throw if any are critical
+// Handle and log compilation errors, ignore warnings
 function handleCompilationErrors(errors) {
   errors.forEach((error) => {
-    const message = `Solidity compilation ${error.severity}: ${error.formattedMessage}`;
     if (error.severity === "error") {
+      const message = `Solidity compilation error: ${error.formattedMessage}`;
       throw new Error(message);
-    } else {
-      logger.warn(message);
     }
+    // If it's a warning, just ignore it (do nothing)
   });
 }
 

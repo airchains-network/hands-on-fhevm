@@ -9,9 +9,11 @@ export function deriveWalletsAndDetails(mnemonic) {
     hdWallet.derivePath(`m/44'/60'/0'/0/0`).getWallet(),
     hdWallet.derivePath(`m/44'/60'/0'/0/1`).getWallet(),
     hdWallet.derivePath(`m/44'/60'/0'/0/2`).getWallet(),
+    hdWallet.derivePath(`m/44'/60'/0'/0/3`).getWallet(),
   ];
 
-  const [walletCore, walletGateway, walletSampleTransfer] = wallets;
+  const [walletCore, walletGateway, walletSampleTransfer, walletRelayer] =
+    wallets;
 
   const deployerAddressCore = walletCore.getAddressString();
   const deployerAddressGateway = walletGateway.getAddressString();
@@ -19,7 +21,7 @@ export function deriveWalletsAndDetails(mnemonic) {
   const privateKeyCore = walletCore.getPrivateKeyString();
   const privateKeyGateway = walletGateway.getPrivateKeyString();
   const privateKeySampleTransfer = walletSampleTransfer.getPrivateKeyString();
-
+  const privateKeyRelayer = walletRelayer.getPrivateKeyString();
   return {
     walletCore,
     walletGateway,
@@ -30,5 +32,14 @@ export function deriveWalletsAndDetails(mnemonic) {
     privateKeyCore,
     privateKeyGateway,
     privateKeySampleTransfer,
+    privateKeyRelayer,
   };
 }
+
+// TODO: Use ethers for wallet creation
+// const words = process.env.MNEMONIC!;
+// const mnemonic = ethers.Mnemonic.fromPhrase(words);
+// if (!mnemonic) {
+//   throw new Error("No MNEMONIC in .env file");
+// }
+// const wallet = ethers.HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0`);

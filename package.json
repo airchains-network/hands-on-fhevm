@@ -4,21 +4,23 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "test": "node index.test.js",
+    "fund": "node utils/fund-address.js",
+    "core": "node index.js",
+    "deploy": "node contract-deploy.js",
+    "test": "node contract-interact.js",
     "format": "prettier --write .",
-    "lint:fix": "eslint . --fix"
+    "lint": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
-    "eslint": "^9.15.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "globals": "^15.12.0",
+    "@eslint/js": "^9.19.0",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^15.14.0",
     "prettier": "^3.4.1"
   },
   "dependencies": {

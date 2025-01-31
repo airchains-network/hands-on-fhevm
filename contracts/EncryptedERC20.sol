@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.24;
 
-import "fhevm/lib/TFHE.sol";
+import "./core/lib/TFHE.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "fhevm/gateway/GatewayCaller.sol";
+import "./core/gateway/GatewayCaller.sol";
 
 
 contract EncryptedERC20 is Ownable2Step,GatewayCaller  {

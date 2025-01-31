@@ -99,7 +99,7 @@ Once Go and Docker are installed, clone the **hands-on-fhevm** repository from G
    ```
 5. Create a .env file
    ```bash
-   cp .example.env .env
+   cp .env.example .env
    ```
 6. Deploy essential contracts on network setup
    ```bash

@@ -31,9 +31,9 @@ Ensure you have **Node.js (>=20)** and **npm** installed.
    npm install
    ```
 
-3. Create an `.env` file (copy from `.example.env` if provided) and configure necessary environment variables.
+3. Create an `.env` file (copy from `.env.example` if provided) and configure necessary environment variables.
    ```sh
-   cp .example.env .env
+   cp .env.example .env
    ```
 
 ---

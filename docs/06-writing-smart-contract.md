@@ -15,14 +15,15 @@ This contract implements an encrypted ERC20 token using Fully Homomorphic Encryp
 ### Imports
 
 The contract uses the following dependencies:
+
 - **TFHE Library**: Provides FHE-related operations.
 - **OpenZeppelin's Ownable2Step**: For ownership and access control.
 - **GatewayCaller**: Manages decryption requests and callbacks.
 
 ```solidity
-import "fhevm/lib/TFHE.sol";
+import "./core/lib/TFHE.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "fhevm/gateway/GatewayCaller.sol";
+import "./core/gateway/GatewayCaller.sol";
 ```
 
 ---
@@ -160,4 +161,10 @@ function callbackDecryptedBalanceOf(uint256 requestID, uint32 decryptedInput) pu
 }
 ```
 
-View the complete contract here: [Link]
+View the complete contract here: **[EncryptedERC20](../contracts/EncryptedERC20.sol)**
+
+---
+
+## Next Steps
+
+With your contract completed, you can now interact with them using the `ethers.js` library or the `fhEVM.js` utilities provided in the repository. Move on to the **[Writing Tests to Interact](./07-writing-contract-test-files.md)** section to learn how to write tests functions of your contract.

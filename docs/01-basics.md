@@ -12,6 +12,7 @@ fhEVM enables confidential smart contracts on EVM-compatible blockchains using F
 ## Key Features
 
 ### Encrypted Data Types
+
 - **Booleans**: `ebool`
 - **Integers**: `euint4`, `euint8`, ... `euint256`
 - **Addresses**: `eaddress`
@@ -19,7 +20,7 @@ fhEVM enables confidential smart contracts on EVM-compatible blockchains using F
 - **Inputs**: `einput`
 
 ### Type Casting
+
 - Convert between encrypted types: `TFHE.asEbool`, `TFHE.asEuintX`, `TFHE.asEaddress`, etc.
 
 fhEVM empowers secure and efficient computation on encrypted data while preserving blockchain functionality.
-

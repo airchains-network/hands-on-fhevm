@@ -1,12 +1,15 @@
 # Preparation
 
-This section will guide you through setting up your environment to work with fhevm and give you a basic understanding of how to use javascript to compile, deploy and interact your fhevm-contracts on a fhe-enabled ethermint chain.  Follow these simple steps to ensure you have the necessary tools and dependencies.
+This section will guide you through setting up your environment to work with fhevm and give you a basic understanding of how to use JS to compile, deploy and interact your fhevm-contracts on a fhe-enabled ethermint chain.
+
+Follow these simple steps to ensure you have the necessary tools and dependencies.
 
 ---
 
 ## Prerequisites
 
 Before proceeding, ensure your system meets the following requirements:
+
 - **Operating System**: Linux, macOS, or Windows with WSL2
 - **Go**: Version `v1.23.x` or higher
 - **Docker**: Version `v26.x.x` or higher
@@ -17,7 +20,7 @@ Before proceeding, ensure your system meets the following requirements:
 ## Step 1: Install Go
 
 1. Visit the [Go Downloads Page](https://go.dev/dl/) and download the installer for your operating system.
-2. Follow the installation instructions specific to your OS.
+2. Follow the installation instructions specific for your OS.
 3. Verify the installation by running the following command:
    ```bash
    go version
@@ -49,7 +52,20 @@ Before proceeding, ensure your system meets the following requirements:
 
 ---
 
-## Step 3: Install Node.js
+## Step 3: Install Docker Compose Plugin
+
+1. Follow the official Docker Compose plugin installation guide for your operating system:
+   - [Install Docker Compose Plugin on Linux](https://docs.docker.com/compose/install/linux/)
+   - [Install Docker Compose Plugin on macOS](https://docs.docker.com/compose/install/mac/)
+2. After installation, verify Docker Compose plugin is installed correctly:
+   ```bash
+   docker compose version
+   ```
+   You should see the installed Docker Compose plugin version in the output.
+
+---
+
+## Step 4: Install Node.js
 
 1. Install Node.js and npm using the official guide for your operating system: [Node.js Downloads](https://nodejs.org/en/download/)
 
@@ -64,39 +80,34 @@ Before proceeding, ensure your system meets the following requirements:
 
 ---
 
+## Step 5: Clone the Project Repository and Setup
 
-## Step 4: Clone the Project Repository and Setup
-
-Once Go and Docker are installed, clone the **[Your Project Name]** repository from GitHub:
+Once Go and Docker are installed, clone the **hands-on-fhevm** repository from GitHub:
 
 1. Open a terminal and navigate to the directory where you want to clone the repository.
 2. Run the following command:
    ```bash
-   git clone https://github.com/your-org/your-repo.git
+   git clone https://github.com/airchains-network/hands-on-fhevm.git
    ```
 3. Navigate to the project directory:
    ```bash
-   cd your-repo
+   cd hands-on-fhevm
    ```
-4. Checkout the branch
-   ```bash
-   git checkout <branch-name>
-   ```
-5. Install dependencies
+4. Install dependencies
    ```bash
    npm install
    ```
-6. Create a .env file
+5. Create a .env file
    ```bash
-   cp .env.example .env
+   cp .example.env .env
    ```
-<!-- 7. Add your private key and network url to the .env file
+6. Deploy essential contracts on network setup
    ```bash
-   PRIVATE_KEY=<your-private-key>
-   NETWORK_URL=<your-network-url>
-   ``` -->
+   npm start
+   ```
+
 ---
 
 ## What's Next?
 
-With your environment prepared, you're ready to start exploring on fhevm. Move on to the **[Writing smart contracts](04-Writing-Smart-Contracts.md)** section to learn how to configure and setup your project.
+With your prerequisites set up, move on to the **[Setting up Network](./04-setting-up-network.md)** section to set up your fhevm network.

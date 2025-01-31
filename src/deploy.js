@@ -1,33 +1,44 @@
 import { JsonRpcProvider, Wallet, ContractFactory } from "ethers";
+import { getCompiledContract } from "./compile.js";
 import logger from "../utils/logger.js";
 
-async function deployContract(
+export async function deployContract(
   networkUrl,
   privateKey,
-  compiledContract,
+  contractName,
   constructorArgs = [],
 ) {
   try {
-    // Retrieve the compiled contract object from the specified file
-    const { abi, evm } = compiledContract; // Destructure ABI and EVM bytecode
-
-    // Initialize a JSON-RPC provider to interact with the Ethereum network
+    const { abi, evm } = await getCompiledContract(contractName);
     const provider = new JsonRpcProvider(networkUrl);
-    // Create a wallet instance using the provided private key and provider
     const wallet = new Wallet(privateKey, provider);
 
-    // Create a contract factory for deploying the contract
+    const balanceWei = await provider.getBalance(wallet.address);
+
+    if (balanceWei === 0n) {
+      logger.warn("Wallet Balance Alert");
+      logger.info(`Address: ${wallet.address}`);
+      logger.info("Current balance: 0 ETH");
+      logger.warn("Action required: Please add funds to this address\n");
+      throw new Error("zero_balance");
+    }
+
     const factory = new ContractFactory(abi, evm.bytecode, wallet);
-    // Deploy the contract with the specified constructor arguments
+
+    logger.info(`Deploying ${contractName}`);
     const contract = await factory.deploy(...constructorArgs);
 
-    // Wait for the contract deployment to be mined and confirmed
-    await contract.waitForDeployment();
-    return { contract }; // Return the deployed contract instance
+    logger.info(`Successfully deployed ${contractName} at: ${contract.target}`);
+    logger.info(`Transaction hash: ${contract.deploymentTransaction().hash}`);
+    return { contract };
   } catch (error) {
-    logger.error(`Error deploying contract: ${error.message}`);
-    throw error; // Rethrow the error to be handled by the caller
+    if (
+      error.message === "zero_balance" ||
+      error.message === "insufficient_balance"
+    ) {
+      process.exit(1);
+    }
+    logger.error(`\nDeployment failed: ${error.message}`);
+    throw error;
   }
 }
-
-export default deployContract;

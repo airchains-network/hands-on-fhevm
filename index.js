@@ -1,91 +1,66 @@
 import logger from "./utils/logger.js";
 import { getEnvironmentVariables } from "./utils/env.js";
 import { deriveWalletsAndDetails } from "./utils/wallet.js";
-import { computeCoreAddresses } from "./src/core/compute-core-addresses.js";
-import { deployCoreContracts } from "./src/core/deploy-core-contracts.js";
-import { gateway } from "./src/core/gateway.js";
-import getCompiledContract from "./src/compile.js";
-import deployContract from "./src/deploy.js";
-import path from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-
-let contractAddress;
-
-export function getContractPath() {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  return path.resolve(__dirname, "./contracts/EncryptedERC20.sol");
-}
-
-async function deployCoreAndGatewayContracts(
-  privateKeyCore,
-  networkUrl,
-  deployerAddressCore,
-  privateKeyGateway,
-  deployerAddressGateway,
-) {
-  await computeCoreAddresses(deployerAddressCore);
-  await deployCoreContracts(privateKeyCore, networkUrl, deployerAddressCore);
-  await gateway(privateKeyGateway, networkUrl, deployerAddressGateway);
-}
-
-async function deployUserContract(networkUrl, privateKeyCore, contractPath) {
-  const compiledContract = getCompiledContract(contractPath);
-  const { contract } = await deployContract(
-    networkUrl,
-    privateKeyCore,
-    compiledContract,
-    // pass constructor arguments according to the contract
-    ["NAME", "SYMBOL"],
-  );
-
-  if (!contract) {
-    throw new Error("Failed to deploy contract.");
-  }
-
-  return contract.getAddress();
-}
+import { computeCoreAddresses } from "./src/core/precompute-core-address.js";
+import { deployCoreContract } from "./src/core/deploy-core-address.js";
+import { setupRelayer } from "./src/core/gateway-relayer.js";
 
 async function main() {
-  try {
-    const { networkUrl, mnemonic } = getEnvironmentVariables();
-    const {
-      deployerAddressCore,
-      deployerAddressGateway,
-      privateKeyCore,
-      privateKeyGateway,
-    } = deriveWalletsAndDetails(mnemonic);
-    const contractPath = getContractPath();
+  const { networkUrl, mnemonic } = getEnvironmentVariables();
+  const {
+    deployerAddressCore,
+    privateKeyCore,
+    deployerAddressGateway,
+    privateKeyGateway,
+    privateKeyRelayer,
+  } = deriveWalletsAndDetails(mnemonic);
+  logger.boldinfo("========== PRECOMPUTING CORE ADDRESSES ==========");
+  await computeCoreAddresses(deployerAddressCore, deployerAddressGateway);
+  logger.boldinfo("✅ Precomputing addresses successful");
 
-    if (!networkUrl || !privateKeyCore || !privateKeyGateway) {
-      throw new Error(
-        "Environment variables NETWORK_URL, PRIVATE_KEY_CORE, or PRIVATE_KEY_GATEWAY are missing.",
-      );
-    }
+  logger.boldinfo("========== CORE ADDRESSES ==========");
+  await deployCoreContract(
+    privateKeyCore,
+    networkUrl,
+    "core/lib",
+    "ACL.sol",
+    "contracts/core/lib",
+    ".env.exec",
+    ["FHEVM_COPROCESSOR_ADDRESS"],
+  );
+  await deployCoreContract(
+    privateKeyCore,
+    networkUrl,
+    "core/lib",
+    "TFHEExecutor.sol",
+    "",
+    "",
+  );
+  await deployCoreContract(
+    privateKeyCore,
+    networkUrl,
+    "core/lib",
+    "KMSVerifier.sol",
+    "",
+    "",
+  );
+  await deployCoreContract(
+    privateKeyGateway,
+    networkUrl,
+    "core/gateway",
+    "GatewayContract.sol",
+    "contracts/core/lib",
+    ".env.kmsverifier",
+    [deployerAddressGateway, "KMS_VERIFIER_CONTRACT_ADDRESS"],
+  );
+  logger.boldinfo("✅ Core Contracts deployed successfully");
 
-    await deployCoreAndGatewayContracts(
-      privateKeyCore,
-      networkUrl,
-      deployerAddressCore,
-      privateKeyGateway,
-      deployerAddressGateway,
-    );
-    contractAddress = await deployUserContract(
-      networkUrl,
-      privateKeyCore,
-      contractPath,
-    );
+  // Sleep for 2 seconds
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    logger.info(`Contract Address: ${contractAddress}`);
-    return contractAddress;
-  } catch (error) {
-    logger.error(`Error in main execution: ${error.message}`);
-  }
+  logger.boldinfo("========== GATEWAY RELAYER ==========");
+  await setupRelayer(privateKeyGateway, networkUrl, privateKeyRelayer);
+  logger.boldinfo("✅ Gateway Relayer added successfully");
 }
 
-main().catch((error) => {
-  logger.error(`Unhandled error in main execution: ${error.message}`);
-});
-
-export const deployedContract = { contractAddress };
+main();

@@ -1,36 +1,45 @@
-// Logger
 import winston from "winston";
-const { combine, colorize, printf } = winston.format;
+import util from "util";
 
-const logFormat = printf(({ level, message, timestamp }) => {
-  return `${timestamp} ${level}: ${message}`;
+const { combine, colorize, timestamp, splat, printf } = winston.format;
+
+const logFormat = printf(({ level, message, timestamp, ...meta }) => {
+  const formattedMessage = util.format(message, ...Object.values(meta));
+  return `${timestamp} ${level}: ${formattedMessage}`;
 });
 
 const logger = winston.createLogger({
   level: "info",
-  format: combine(
-    colorize(),
-    winston.format.timestamp({ format: "HH:mm:ss" }),
-    logFormat,
-  ),
+  format: combine(timestamp({ format: "HH:mm:ss" }), splat(), logFormat),
   transports: [
     new winston.transports.Console({
       format: combine(
         colorize(),
-        winston.format.timestamp({ format: "HH:mm:ss" }),
-        printf(({ level, message, timestamp }) => {
-          return `${timestamp} ${level}: ${message}`;
+        timestamp({ format: "HH:mm:ss" }),
+        splat(),
+        printf(({ level, message, timestamp, ...meta }) => {
+          const formattedMessage = util.format(message, ...Object.values(meta));
+          return `${timestamp} ${level}: ${formattedMessage}`;
         }),
       ),
     }),
     new winston.transports.File({
       filename: "app.log",
       format: combine(
-        winston.format.timestamp({ format: "HH:mm:ss" }),
-        logFormat,
+        timestamp({ format: "HH:mm:ss" }),
+        splat(),
+        printf(({ level, message, timestamp, ...meta }) => {
+          const formattedMessage = util.format(message, ...Object.values(meta));
+          return `${timestamp} ${level}: ${formattedMessage}`;
+        }),
       ),
     }),
   ],
 });
+
+logger.boldinfo = function (message, ...meta) {
+  const boldMessage = `\x1b[1m${message}\x1b[0m`;
+  this.info(boldMessage, ...meta);
+};
 
 export default logger;

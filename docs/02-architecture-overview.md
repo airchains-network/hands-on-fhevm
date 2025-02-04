@@ -31,4 +31,4 @@ For more detailed insights, you can refer to the original documentation provided
 
 ## What's Next?
 
-With your understanding of the fhevm architecture, let's setup a fhevm network. Move on to the **[Network Setup](./03-setting-up-network.md)** section to learn how to.
+With your understanding of the fhevm architecture, let's get started. Move on to the **[Preparation](./03-preparation.md)** section to learn how to.

@@ -25,7 +25,12 @@ npm run fund
 ```bash
 npm run core
 ```
-
+> [!NOTE]
+> On running this command, you will see `Error: Gateway contract not found at: <gateway-contract-deployed-address>`  This is expected and can be ignored.
+>
+> Once you rerun the same command, this won't happen.
+>
+> It is a known issue and will be fixed in the future.
 ---
 
 ## Stop the network

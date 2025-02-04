@@ -1,9 +1,13 @@
-# Hands on fhEVM
+# Hands-on fhEVM
 
-This is a hands-on guide for the fhEVM project. It is intended to be a step-by-step guide for you to setup your own fhEVM network and test out your fhevm smart contracts.
-Please refer to the below table of contents to navigate through the documentation.
+Welcome to the Hands-on fhEVM guide! 🚀
 
-## Table of Contents
+This repository provides a step-by-step guide to setting up your own fhEVM network and deploying fhEVM smart contracts. Follow the instructions below to get started.
+
+## 📖 Overview
+fhEVM (Fully Homomorphic Encryption Virtual Machine) enables encrypted computation on blockchain smart contracts. This guide walks you through the setup process, from network initialization to contract deployment and testing.
+
+## 📂 Table of Contents
 
 1. [Basics](./docs/01-basics.md)
 2. [Architecture Overview](./docs/02-architecture-overview.md)
@@ -14,30 +18,56 @@ Please refer to the below table of contents to navigate through the documentatio
 7. [Writing Contract Test Files](./docs/07-writing-contract-test-files.md)
 8. [Conclusion](./docs/08-conclusion.md)
 
-## Installation
+## 🛠️ Installation
 
 ### Prerequisites
+Ensure you have the following installed:
 
-Ensure you have **Node.js (>=20)** and **npm** installed.
+- **Node.js (>=20)**
+- **Docker (>=24) with docker compose plugin**
 
-1. Clone the repository:
+### Setup
+Clone the repository and install dependencies:
+
+```sh
+git clone https://github.com/airchains-network/hands-on-fhevm.git
+cd hands-on-fhevm
+npm install
+```
+
+### Environment Configuration
+Create an `.env` file and configure the necessary environment variables:
+
+```sh
+cp .env.example .env
+```
+
+### Running the Network
+Follow the instructions in [Setting Up Network](./docs/04-setting-up-network.md) to start the network, then proceed through the remaining documentation to learn how to deploy and interact with smart contracts.
+
+## 🤝 Contributing
+We welcome contributions! To contribute:
+
+1. Fork the repository.
+2. Create a feature branch:
    ```sh
-   git clone https://github.com/airchains-network/hands-on-fhevm.git
-   cd hands-on-fhevm
+   git checkout -b feature/feature-name/patch-${version}
    ```
-
-2. Install dependencies:
+3. Commit your changes:
    ```sh
-   npm install
+   git commit -m "Description of changes"
    ```
-
-3. Create an `.env` file (copy from `.env.example` if provided) and configure necessary environment variables.
+4. Push to your branch:
    ```sh
-   cp .env.example .env
+   git push origin feature/feature-name/patch-${version}
    ```
+5. Open a Pull Request.
 
----
+## 📬 Feedback and Support
+If you have any feedback or encounter any issues, feel free to:
 
-## Contribution
+- Open an issue in this repository.
+- Reach out to us at **support@airchains.network**.
 
-Thank you for your interest in contributing to this project! We welcome all contributions to this project by creating a pull request.
+## 📜 License
+This project is licensed under the **MIT License**.

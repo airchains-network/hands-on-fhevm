@@ -31,7 +31,7 @@ async function interactWithContract() {
     );
 
     logger.info(`Mint Result: ${mintResult}`);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     await decryptMintedTokens(
       filename,
@@ -39,7 +39,7 @@ async function interactWithContract() {
       privateKeyTest,
       contractAddress,
     );
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     await fetchTokenDetails(
       filename,

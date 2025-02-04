@@ -60,6 +60,8 @@ export const decryptMintedTokens = async (
     const requestTx = await contract.requestDecryptedBalanceOf(wallet.address);
     await requestTx.wait();
 
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
     const decryptedBalance = await contract.decryptedBalanceOf(wallet.address);
     logger.info(`Decrypted Balance: ${decryptedBalance}`);
   } catch (error) {

@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.24;
 
-import "../lib/TFHE.sol"=
-  mport "./lib/Gateway.sol";
+import "../lib/TFHE.sol";
+import "./lib/Gateway.sol";
 
 abstract contract GatewayCaller {
     modifier onlyGateway() {
